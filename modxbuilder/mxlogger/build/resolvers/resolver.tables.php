@@ -1,6 +1,9 @@
 <?php
 /**
- * PHP-резолвер mxLogger: создание таблиц при install/upgrade.
+ * PHP-резолвер mxLogger: создание/достройка таблицы при install/upgrade.
+ * Идемпотентно: createObjectContainer создаёт таблицу со всеми колонками и
+ * индексами на чистой установке; addField/addIndex вызываются ТОЛЬКО для
+ * реально недостающих (иначе на свежей установке сыпались бы «Duplicate column/key»).
  *
  * @var xPDOTransport $transport
  * @var array $options
@@ -17,26 +20,37 @@ if ($transport->xpdo) {
             $modx->addPackage('mxlogger', $modelPath);
 
             $manager = $modx->getManager();
-            // Создаёт таблицу, если её ещё нет; на upgrade безопасно достраивает недостающие поля/индексы.
             $manager->createObjectContainer('mxLoggerLog');
-            $manager->addField('mxLoggerLog', 'tags');
-            $manager->addField('mxLoggerLog', 'process_uid');
-            $manager->addIndex('mxLoggerLog', 'process_uid');
-            $manager->addField('mxLoggerLog', 'class');
-            $manager->addField('mxLoggerLog', 'function');
-            $manager->addField('mxLoggerLog', 'file');
-            $manager->addField('mxLoggerLog', 'line');
-            $manager->addField('mxLoggerLog', 'trace');
-            $manager->addIndex('mxLoggerLog', 'class');
 
-            // FULLTEXT-индекс по тэгам: addIndex/createObjectContainer не всегда
-            // надёжно создают FULLTEXT, поэтому гарантируем его напрямую.
             $table = $modx->getTableName('mxLoggerLog');
-            $exists = false;
-            if ($stmt = $modx->query("SHOW INDEX FROM {$table} WHERE Key_name = 'tags'")) {
-                $exists = (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Какие колонки и индексы уже есть.
+            $cols = array();
+            if ($stmt = $modx->query("SHOW COLUMNS FROM {$table}")) {
+                foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $c) {
+                    $cols[strtolower($c)] = true;
+                }
             }
-            if (!$exists) {
+            $idx = array();
+            if ($stmt = $modx->query("SHOW INDEX FROM {$table}")) {
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $idx[$r['Key_name']] = true;
+                }
+            }
+
+            // Достраиваем только недостающее (актуально при апгрейде со старой схемы).
+            foreach (array('tags', 'process_uid', 'class', 'function', 'file', 'line', 'trace') as $field) {
+                if (!isset($cols[strtolower($field)])) {
+                    $manager->addField('mxLoggerLog', $field);
+                }
+            }
+            foreach (array('process_uid', 'class') as $index) {
+                if (!isset($idx[$index])) {
+                    $manager->addIndex('mxLoggerLog', $index);
+                }
+            }
+            // FULLTEXT по тэгам (createObjectContainer не всегда его создаёт надёжно).
+            if (!isset($idx['tags'])) {
                 $modx->exec("ALTER TABLE {$table} ADD FULLTEXT INDEX `tags` (`tags`)");
                 $modx->log(modX::LOG_LEVEL_INFO, '[mxlogger] Создан FULLTEXT-индекс tags.');
             }
