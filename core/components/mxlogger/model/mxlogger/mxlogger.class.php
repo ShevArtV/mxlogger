@@ -471,16 +471,20 @@ class mxLogger
 
         $withArgs = ($mode === 'full');
         $skip = isset($options['skip']) ? (int) $options['skip'] : 0;
+        // Доп. классы-прокладки вызывающего кода (фасады/обёртки над логгером),
+        // которые тоже пропускаем при поиске источника. Можно указать точное имя
+        // класса или префикс пространства имён (если строка заканчивается на «\»).
+        $extraClasses = !empty($options['skip_classes']) ? (array) $options['skip_classes'] : array();
         $btOptions = $withArgs ? 0 : DEBUG_BACKTRACE_IGNORE_ARGS;
         $limit = $withArgs ? 0 : ($this->config['trace_limit'] + 8);
         $frames = debug_backtrace($btOptions, $limit);
 
-        // Найти первый «настоящий» кадр: пропускаем собственные классы компонента
-        // и диспетчерские кадры фреймворка (вызов событий/плагинов, include/eval),
-        // чтобы источник указывал на реальный код (напр. msCartHandler::add).
+        // Найти первый «настоящий» кадр: пропускаем собственные классы компонента,
+        // диспетчерские кадры фреймворка (события/плагины, include/eval) и классы
+        // из skip_classes, чтобы источник указывал на реальный код.
         $i = 0;
         $count = count($frames);
-        while ($i < $count && $this->isInternalFrame($frames[$i])) {
+        while ($i < $count && $this->isInternalFrame($frames[$i], $extraClasses)) {
             $i++;
         }
         $i += $skip;
@@ -516,15 +520,27 @@ class mxLogger
      * настоящего источника вызова.
      *
      * @param array $frame
+     * @param array $extraClasses Доп. классы-прокладки (точное имя или префикс ns со «\» на конце).
      * @return bool
      */
-    protected function isInternalFrame(array $frame)
+    protected function isInternalFrame(array $frame, array $extraClasses = array())
     {
         $cls = isset($frame['class']) ? $frame['class'] : '';
         $fn = isset($frame['function']) ? $frame['function'] : '';
 
-        if ($cls !== '' && in_array($cls, $this->ownClasses, true)) {
-            return true;
+        if ($cls !== '') {
+            if (in_array($cls, $this->ownClasses, true)) {
+                return true;
+            }
+            foreach ($extraClasses as $skipClass) {
+                if ($skipClass === '') {
+                    continue;
+                }
+                if ($cls === $skipClass
+                    || (substr($skipClass, -1) === '\\' && strpos($cls, $skipClass) === 0)) {
+                    return true;
+                }
+            }
         }
         // Любой *::invokeEvent (modX, miniShop2, …) — диспетчер событий.
         if ($fn === 'invokeEvent') {
