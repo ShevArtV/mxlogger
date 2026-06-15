@@ -22,5 +22,8 @@ return array(
         array(
             'source' => $this->config['resolvers'] . 'resolver.extensionpackages.php',
         ),
+        array(
+            'source' => $this->config['resolvers'] . 'resolver.events.php',
+        ),
     ),
 );

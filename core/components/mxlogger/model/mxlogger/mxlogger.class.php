@@ -32,6 +32,9 @@ class mxLogger
     /** @var bool|null Кэш результата проверки фильтра в рамках запроса. */
     protected $allowedCache = null;
 
+    /** @var bool Флаг «мы внутри обработки события записи» — защита от рекурсии. */
+    protected $inEvent = false;
+
     /** @var array Собственные классы — пропускаются при разборе backtrace. */
     protected $ownClasses = array('mxLogger', 'mxLoggerProcess');
 
@@ -119,10 +122,9 @@ class mxLogger
 
         $caller = $this->captureCaller($level, $options);
 
-        /** @var mxLoggerLog $log */
-        $log = $this->modx->newObject('mxLoggerLog');
-        $log->fromArray(array(
-            'tags'        => $this->wrapTags($this->normalizeTags($tags)),
+        $tagsArr = $this->normalizeTags($tags);
+        $fields = array(
+            'tags'        => $this->wrapTags($tagsArr),
             'process_uid' => isset($options['process_uid']) ? (string) $options['process_uid'] : null,
             'level'       => $level,
             'message'     => (string) $message,
@@ -136,11 +138,69 @@ class mxLogger
             'session_id'  => $this->getSessionId(),
             'ip'          => $this->getIp(),
             'createdon'   => time(),
-        ), '', true, true);
+        );
+
+        // Событие ДО записи. Плагин может ОТМЕНИТЬ запись
+        // ($modx->event->returnedValues['prevent'] = true) или ИЗМЕНИТЬ любое поле
+        // ($modx->event->returnedValues['<поле>'] = значение; для 'tags' можно массив).
+        // Гард inEvent: если лог вызван из обработчика события — события не дёргаем
+        // (защита от бесконечной рекурсии).
+        if (!$this->inEvent) {
+            $this->inEvent = true;
+            $rv = null;
+            try {
+                $this->modx->invokeEvent('mxlOnBeforeLogSave', array_merge($fields, array(
+                    'tags_list' => $tagsArr,
+                    'options'   => $options,
+                    'mxlogger'  => $this,
+                )));
+                if ($this->modx->event && $this->modx->event->name === 'mxlOnBeforeLogSave') {
+                    $rv = $this->modx->event->returnedValues;
+                }
+            } catch (\Throwable $e) {
+                $this->modx->log(modX::LOG_LEVEL_ERROR, '[mxLogger] Ошибка в обработчике mxlOnBeforeLogSave: ' . $e->getMessage());
+            }
+            $this->inEvent = false;
+
+            if (is_array($rv) && !empty($rv)) {
+                if (!empty($rv['prevent']) || !empty($rv['cancel'])) {
+                    return null;
+                }
+                foreach ($rv as $k => $v) {
+                    if (array_key_exists($k, $fields)) {
+                        $fields[$k] = $v;
+                    }
+                }
+                if (isset($rv['tags']) && is_array($rv['tags'])) {
+                    $fields['tags'] = $this->wrapTags($this->normalizeTags($rv['tags']));
+                }
+            }
+        }
+
+        /** @var mxLoggerLog $log */
+        $log = $this->modx->newObject('mxLoggerLog');
+        $log->fromArray($fields, '', true, true);
 
         if ($log->save() === false) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[mxLogger] Не удалось сохранить запись лога для тэгов "' . $log->get('tags') . '"');
             return null;
+        }
+
+        // Событие ПОСЛЕ записи — для уведомлений и пр. Ошибки обработчика не должны
+        // ломать логирование/запрос.
+        if (!$this->inEvent) {
+            $this->inEvent = true;
+            try {
+                $this->modx->invokeEvent('mxlOnAfterLogSave', array_merge($fields, array(
+                    'id'        => $log->get('id'),
+                    'tags_list' => $this->unwrapTags($fields['tags']),
+                    'object'    => $log,
+                    'mxlogger'  => $this,
+                )));
+            } catch (\Throwable $e) {
+                $this->modx->log(modX::LOG_LEVEL_ERROR, '[mxLogger] Ошибка в обработчике mxlOnAfterLogSave: ' . $e->getMessage());
+            }
+            $this->inEvent = false;
         }
 
         return $log;

@@ -227,7 +227,18 @@ $eps->set('value', json_encode(array_values($clean)));
 $eps->save();
 $say('extension_packages: mxlogger зарегистрирован (доступен как $modx->mxlogger).');
 
-/* ---------- 9. Сброс кэша ---------- */
+/* ---------- 9. Системные события (mxlOnBeforeLogSave / mxlOnAfterLogSave) ---------- */
+foreach (array('mxlOnBeforeLogSave', 'mxlOnAfterLogSave') as $eventName) {
+    if ($modx->getObject('modEvent', array('name' => $eventName))) {
+        continue;
+    }
+    $event = $modx->newObject('modEvent');
+    $event->fromArray(array('name' => $eventName, 'service' => 6, 'groupname' => 'mxLogger'), '', true, true);
+    $event->save();
+}
+$say('Системные события mxlOnBeforeLogSave / mxlOnAfterLogSave зарегистрированы.');
+
+/* ---------- 10. Сброс кэша ---------- */
 $modx->cacheManager->refresh();
 $say('Кэш сброшен.');
 $say('=== Установка mxLogger завершена ===');
