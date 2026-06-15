@@ -54,6 +54,29 @@ if ($transport->xpdo) {
                 $modx->exec("ALTER TABLE {$table} ADD FULLTEXT INDEX `tags` (`tags`)");
                 $modx->log(modX::LOG_LEVEL_INFO, '[mxlogger] Создан FULLTEXT-индекс tags.');
             }
+
+            // Charset: текстовые колонки (message/context/trace) должны принимать
+            // мультибайт (кириллица и пр.). На части серверов createObjectContainer
+            // создаёт таблицу в дефолтном charset сервера (напр. latin1) → INSERT
+            // кириллицы падает с «1366 Incorrect string value». Приводим таблицу к
+            // utf8mb4. Безопасно по длине индексов: макс. B-tree на тексте — class
+            // varchar(190)=760 байт (< 767 даже на старом MySQL), tags — FULLTEXT
+            // (лимит префикса не применяется).
+            $needConvert = true;
+            if ($stmt = $modx->query("SHOW FULL COLUMNS FROM {$table} WHERE Field = 'message'")) {
+                $col = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!empty($col['Collation']) && stripos($col['Collation'], 'utf8mb4') === 0) {
+                    $needConvert = false;
+                }
+            }
+            if ($needConvert) {
+                try {
+                    $modx->exec("ALTER TABLE {$table} CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    $modx->log(modX::LOG_LEVEL_INFO, '[mxlogger] Таблица приведена к utf8mb4.');
+                } catch (\Throwable $e) {
+                    $modx->log(modX::LOG_LEVEL_ERROR, '[mxlogger] Не удалось привести таблицу к utf8mb4: ' . $e->getMessage());
+                }
+            }
             break;
 
         case xPDOTransport::ACTION_UNINSTALL:
