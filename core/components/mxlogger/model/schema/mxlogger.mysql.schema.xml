@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model package="mxlogger" baseClass="xPDOObject" platform="mysql" defaultEngine="InnoDB" version="1.1">
+    <object class="mxLoggerLog" table="mxlogger_log" extends="xPDOSimpleObject">
+        <field key="tags" dbtype="varchar" precision="500" phptype="string" null="false" default="" index="fulltext"/>
+        <field key="process_uid" dbtype="varchar" precision="64" phptype="string" null="true" default="" index="index"/>
+        <field key="level" dbtype="varchar" precision="20" phptype="string" null="false" default="info" index="index"/>
+        <field key="message" dbtype="text" phptype="string" null="true"/>
+        <field key="context" dbtype="mediumtext" phptype="json" null="true"/>
+        <field key="class" dbtype="varchar" precision="190" phptype="string" null="true" default="" index="index"/>
+        <field key="function" dbtype="varchar" precision="190" phptype="string" null="true" default=""/>
+        <field key="file" dbtype="varchar" precision="255" phptype="string" null="true" default=""/>
+        <field key="line" dbtype="integer" precision="11" attributes="unsigned" phptype="integer" null="true" default="0"/>
+        <field key="trace" dbtype="mediumtext" phptype="json" null="true"/>
+        <field key="user_id" dbtype="integer" precision="11" attributes="unsigned" phptype="integer" null="false" default="0" index="index"/>
+        <field key="session_id" dbtype="varchar" precision="64" phptype="string" null="true" default="" index="index"/>
+        <field key="ip" dbtype="varchar" precision="45" phptype="string" null="true" default=""/>
+        <field key="createdon" dbtype="integer" precision="20" attributes="unsigned" phptype="integer" null="false" default="0" index="index"/>
+
+        <index alias="tags" name="tags" primary="false" unique="false" type="FULLTEXT">
+            <column key="tags" length="" collation="A" null="false"/>
+        </index>
+        <index alias="process_uid" name="process_uid" primary="false" unique="false" type="BTREE">
+            <column key="process_uid" length="" collation="A" null="false"/>
+        </index>
+        <index alias="level" name="level" primary="false" unique="false" type="BTREE">
+            <column key="level" length="" collation="A" null="false"/>
+        </index>
+        <index alias="class" name="class" primary="false" unique="false" type="BTREE">
+            <column key="class" length="" collation="A" null="false"/>
+        </index>
+        <index alias="user_id" name="user_id" primary="false" unique="false" type="BTREE">
+            <column key="user_id" length="" collation="A" null="false"/>
+        </index>
+        <index alias="session_id" name="session_id" primary="false" unique="false" type="BTREE">
+            <column key="session_id" length="" collation="A" null="false"/>
+        </index>
+        <index alias="createdon" name="createdon" primary="false" unique="false" type="BTREE">
+            <column key="createdon" length="" collation="A" null="false"/>
+        </index>
+    </object>
+</model>

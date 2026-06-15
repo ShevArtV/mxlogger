@@ -1,0 +1,13 @@
+# Чужой пакет (не наш, не публикуем)
+/core/components/minishop2/
+
+# IDE
+/.idea/
+
+# Секрет автономного просмотрщика — никогда не коммитить
+core/components/mxlogger/standalone.key
+*.key
+
+# Локальный мусор
+*.log
+.DS_Store

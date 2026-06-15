@@ -1,0 +1,24 @@
+Changelog for mxLogger.
+
+mxLogger 1.0.0-beta (2026-06-15)
+================================
+- Первый релиз.
+- Сервис-класс mxLogger: log/debug/info/warning/error, скоуп процесса process().
+- Мультитэги: одна запись может иметь несколько тэгов (lowercase, [a-z0-9]).
+  Хранение — CSV-колонка tags с FULLTEXT-индексом; фильтр any/all, режим
+  mxlogger.tag_filter_mode (auto/fulltext/like) с LIKE-fallback для коротких тэгов.
+- Таблица mxlogger_log: tags, process_uid, level, message, context(JSON), class, function, file, line, trace(JSON), user_id, session_id, ip, createdon.
+- Автозахват вызывающего кода (class/function/file/line) и стэка с параметрами (объекты сворачиваются в имя класса).
+- Режимы захвата: off/caller/full/auto (auto: caller, full для warning/error).
+- Whitelist-фильтры записи: по пользователю, группе, сессии, куке.
+- Менеджерный интерфейс: грид с фильтрами по тэгу/уровню/процессу/дате/тексту, окно детали, очистка.
+- Сниппет mxLogger для вызова из чанков/Fenom.
+- standalone.php — просмотр логов в обход MODX (CLI всегда; web по ключу), на
+  случай, если приложение MODX не грузится. Читает БД напрямую через PDO.
+- Плагин mxLoggerMiniShop2 (статичный, код из файла): логирование действий с
+  корзиной (тэг cart) и оформления заказа (тэг order); сквозной тэг purchase;
+  события одной воронки объединяются process_uid по сессии. Логируются только
+  значимые действия (info/error), без debug. Требует установленного miniShop2.
+- Авто-определение «Источника»: движок пропускает диспетчерские кадры фреймворка
+  (*::invokeEvent, mod*::process, include/eval) и указывает реальный метод —
+  напр. msCartHandler::add вместо бесполезного ::include.
