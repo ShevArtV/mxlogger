@@ -11,3 +11,6 @@ core/components/mxlogger/standalone.key
 # Локальный мусор
 *.log
 .DS_Store
+
+# Собранные transport-пакеты (артефакты сборки)
+/core/packages/
