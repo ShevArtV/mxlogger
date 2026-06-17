@@ -278,12 +278,21 @@ Ext.extend(MxLogger.grid.Log, MODx.grid.Grid, {
 
     clearLog: function() {
         var bp = this.getStore().baseParams;
-        Ext.Msg.confirm(_('mxlogger_btn_clear'), _('mxlogger_log_clear_confirm'), function(e) {
+        // Те же фильтры, что и в гриде (getlist) — очистка удалит ровно то,
+        // что сейчас отфильтровано. Если ни одного фильтра нет — весь журнал.
+        var params = {
+            tags: bp.tags, tags_match: bp.tags_match, level: bp.level,
+            process_uid: bp.process_uid, ident: bp.ident, query: bp.query,
+            date_from: bp.date_from, date_to: bp.date_to
+        };
+        var hasFilter = false;
+        Ext.iterate(params, function(k, v) {
+            if (k !== 'tags_match' && v) { hasFilter = true; }
+        });
+        var msg = hasFilter ? _('mxlogger_log_clear_confirm') : _('mxlogger_log_clear_confirm_all');
+        Ext.Msg.confirm(_('mxlogger_btn_clear'), msg, function(e) {
             if (e !== 'yes') { return; }
-            MxLogger.request('mgr/log/clear', {
-                tags: bp.tags, level: bp.level, process_uid: bp.process_uid,
-                date_from: bp.date_from, date_to: bp.date_to
-            }, function() { this.refresh(); }, this);
+            MxLogger.request('mgr/log/clear', params, function() { this.refresh(); }, this);
         }, this);
     },
 

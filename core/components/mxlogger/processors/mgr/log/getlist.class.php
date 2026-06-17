@@ -5,7 +5,7 @@
  * @package mxlogger
  * @subpackage processors
  */
-require_once dirname(__FILE__) . '/tagfilter.php';
+require_once dirname(__FILE__) . '/filters.php';
 
 class mxLoggerLogGetListProcessor extends modObjectGetListProcessor
 {
@@ -33,73 +33,12 @@ class mxLoggerLogGetListProcessor extends modObjectGetListProcessor
 
     public function prepareQueryBeforeCount(xPDOQuery $c)
     {
-        $level = $this->getProperty('level');
-        $processUid = $this->getProperty('process_uid');
-        $userId = $this->getProperty('user_id');
-        $class = $this->getProperty('class');
-        $query = $this->getProperty('query');
-        $dateFrom = $this->getProperty('date_from');
-        $dateTo = $this->getProperty('date_to');
-
-        mxLoggerLogTagFilter::apply(
-            $this->modx, $c,
-            $this->getProperty('tags', $this->getProperty('tag')),
-            $this->getProperty('tags_match', 'any')
-        );
-
-        if (!empty($level)) {
-            $c->where(array('level' => $level));
+        // Те же условия применяются и при очистке журнала (clear) — единый
+        // источник правды, чтобы очистка по фильтру совпадала с выборкой грида.
+        $where = mxLoggerLogFilters::build($this->modx, $this->getProperties());
+        if (!empty($where)) {
+            $c->where($where);
         }
-        if (!empty($processUid)) {
-            $c->where(array('process_uid' => $processUid));
-        }
-        if ($userId !== null && $userId !== '') {
-            $c->where(array('user_id' => (int) $userId));
-        }
-        if (!empty($class)) {
-            $c->where(array('class:LIKE' => '%' . $class . '%'));
-        }
-        if (!empty($dateFrom) && ($tsFrom = strtotime($dateFrom))) {
-            $c->where(array('createdon:>=' => $tsFrom));
-        }
-        if (!empty($dateTo) && ($tsTo = strtotime($dateTo))) {
-            $c->where(array('createdon:<=' => $tsTo));
-        }
-        if (!empty($query)) {
-            // Поиск по тексту: сообщение, источник (класс/метод), файл/строка.
-            // Ищем как по отдельным колонкам, так и по склеенным формам, которые
-            // видны в гриде: «class::function» и «file:line».
-            // Тэги/процесс/сессия/ip — отдельные фильтры. Значение экранируем quote().
-            $q = $this->modx->quote('%' . $query . '%');
-            $c->where('(' .
-                'message LIKE ' . $q .
-                ' OR class LIKE ' . $q .
-                ' OR function LIKE ' . $q .
-                ' OR file LIKE ' . $q .
-                ' OR CAST(line AS CHAR) LIKE ' . $q .
-                ' OR CONCAT(class, \'::\', function) LIKE ' . $q .
-                ' OR CONCAT(file, \':\', line) LIKE ' . $q .
-            ')');
-        }
-
-        // Отдельный фильтр по пользователю / сессии / ip — отдельной группой
-        // (AND к остальным), чтобы комбинировать с текстовым поиском.
-        // Пользователь: по user_id (если число) и по username (подзапрос к modUser).
-        $ident = $this->getProperty('ident');
-        if (!empty($ident)) {
-            $q = $this->modx->quote('%' . $ident . '%');
-            $usersTable = $this->modx->getTableName('modUser');
-            $conds = array(
-                'session_id LIKE ' . $q,
-                'ip LIKE ' . $q,
-                'user_id IN (SELECT id FROM ' . $usersTable . ' WHERE username LIKE ' . $q . ')',
-            );
-            if (ctype_digit((string) $ident)) {
-                $conds[] = 'user_id = ' . (int) $ident;
-            }
-            $c->where('(' . implode(' OR ', $conds) . ')');
-        }
-
         return $c;
     }
 

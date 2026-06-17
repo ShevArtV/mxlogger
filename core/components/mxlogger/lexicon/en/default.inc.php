@@ -47,6 +47,7 @@ $_lang['mxlogger_btn_refresh'] = 'Refresh';
 $_lang['mxlogger_btn_reset'] = 'Reset';
 $_lang['mxlogger_btn_clear'] = 'Clear';
 $_lang['mxlogger_log_clear_confirm'] = 'Delete journal entries matching the current filter? This cannot be undone.';
+$_lang['mxlogger_log_clear_confirm_all'] = 'No filters set — the ENTIRE journal will be deleted. This cannot be undone. Continue?';
 $_lang['mxlogger_log_cleared'] = 'Entries removed: [[+count]].';
 
 /* Settings */

@@ -47,6 +47,7 @@ $_lang['mxlogger_btn_refresh'] = 'Обновить';
 $_lang['mxlogger_btn_reset'] = 'Сбросить';
 $_lang['mxlogger_btn_clear'] = 'Очистить';
 $_lang['mxlogger_log_clear_confirm'] = 'Удалить записи журнала по текущему фильтру? Действие необратимо.';
+$_lang['mxlogger_log_clear_confirm_all'] = 'Фильтры не заданы — будет удалён ВЕСЬ журнал. Действие необратимо. Продолжить?';
 $_lang['mxlogger_log_cleared'] = 'Удалено записей: [[+count]].';
 
 /* Настройки */
