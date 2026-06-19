@@ -35,6 +35,9 @@ $_lang['mxlogger_click_filter'] = 'Click to filter';
 /* Filters */
 $_lang['mxlogger_filter_tag'] = 'Tags';
 $_lang['mxlogger_tags_empty'] = 'No tags yet';
+$_lang['mxlogger_tag_search'] = 'Search tags';
+$_lang['mxlogger_tag_prev'] = 'Previous page';
+$_lang['mxlogger_tag_next'] = 'Next page';
 $_lang['mxlogger_filter_level'] = 'Level…';
 $_lang['mxlogger_filter_process'] = 'Process UID…';
 $_lang['mxlogger_filter_ident'] = 'User / session / IP…';

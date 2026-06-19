@@ -58,12 +58,14 @@ class mxLogger
 
         $corePath = $this->modx->getOption('mxlogger.core_path', $config, $this->modx->getOption('core_path') . 'components/mxlogger/');
         $assetsUrl = $this->modx->getOption('mxlogger.assets_url', $config, $this->modx->getOption('assets_url') . 'components/mxlogger/');
+        $assetsPath = $this->modx->getOption('mxlogger.assets_path', $config, $this->modx->getOption('assets_path') . 'components/mxlogger/');
 
         $this->config = array_merge(array(
             'core_path'     => $corePath,
             'model_path'    => $corePath . 'model/',
             'processors_path' => $corePath . 'processors/',
             'assets_url'    => $assetsUrl,
+            'assets_path'   => $assetsPath,
             'connector_url' => $assetsUrl . 'connector.php',
 
             // Поведение логирования (берётся из системных настроек, переопределяется $config).

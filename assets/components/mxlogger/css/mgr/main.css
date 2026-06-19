@@ -81,3 +81,27 @@ a.mxlogger-fval:not(.mxlogger-tag):hover { text-decoration: underline; }
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+/* Пагинация в меню выбора тэгов: стрелки и счётчик в одну строку */
+.mxlogger-tag-pager .x-menu-item-text {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+.mxlogger-tag-pager .mxl-pg-btn {
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 6px;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.mxlogger-tag-pager .mxl-pg-btn.mxl-pg-dis {
+    opacity: .3;
+    cursor: default;
+}
+.mxlogger-tag-pager .mxl-pg-info {
+    font-size: 11px;
+    color: #666;
+}

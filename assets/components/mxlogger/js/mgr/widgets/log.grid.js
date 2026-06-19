@@ -185,39 +185,166 @@ Ext.extend(MxLogger.grid.Log, MODx.grid.Grid, {
 
     /* ---------- Мультивыбор тэгов (кнопка + меню чекбоксов) ---------- */
 
+    _tagPageSize: 10,
+
     _initTagMenu: function(btn) {
         var grid = this;
         grid._tagBtn = btn;
+        grid._allTags = [];
+        grid._checkedTags = {};
+        grid._tagPage = 0;
+        grid._tagQuery = '';
+        // При открытии меню растягиваем поле поиска на его ширину.
+        if (!grid._tagMenuShowBound && btn.menu) {
+            grid._tagMenuShowBound = true;
+            btn.menu.on('show', function(m) {
+                var f = grid._tagSearchField;
+                if (f && f.rendered && m.el) { f.setWidth(m.el.getWidth() - 8); }
+            });
+        }
         MxLogger.request('mgr/log/gettags', {}, function(data) {
             if (!btn.menu) { return; }
-            btn.menu.removeAll();
             var rows = (data && data.results) ? data.results : [];
-            if (!rows.length) {
-                btn.menu.add({ text: _('mxlogger_tags_empty'), disabled: true });
-                return;
-            }
-            Ext.each(rows, function(r) {
-                btn.menu.add(new Ext.menu.CheckItem({
-                    text: r.tag,
-                    hideOnClick: false,
-                    checkHandler: function() { grid._onTagCheck(); }
-                }));
-            });
-            btn.menu.add('-');
-            btn.menu.add({
-                text: _('mxlogger_btn_reset'),
-                handler: function() { grid._clearTags(); }
-            });
+            grid._allTags = [];
+            Ext.each(rows, function(r) { grid._allTags.push(r.tag); });
+            grid._tagPage = 0;
+            grid._renderTagPage();
         }, grid);
     },
 
-    _collectTags: function() {
-        var tags = [];
-        if (this._tagBtn && this._tagBtn.menu) {
-            this._tagBtn.menu.items.each(function(it) {
-                if (it.checked) { tags.push(it.text); }
+    // Перерисовывает меню тэгов: поле поиска + текущая страница чекбоксов (по
+    // _tagPageSize штук). Состояние выбора (grid._checkedTags) и строка поиска
+    // (grid._tagQuery) переживают смену страниц.
+    _renderTagPage: function() {
+        var grid = this;
+        var btn = grid._tagBtn;
+        if (!btn || !btn.menu) { return; }
+        var menu = btn.menu;
+        menu.removeAll();
+
+        var all = grid._allTags || [];
+        if (!all.length) {
+            menu.add({ text: _('mxlogger_tags_empty'), disabled: true });
+            return;
+        }
+
+        // Поле поиска — показываем, когда тэгов больше одной страницы.
+        var searchField = null;
+        if (all.length > grid._tagPageSize) {
+            searchField = new Ext.form.TextField({
+                emptyText: _('mxlogger_tag_search'),
+                value: grid._tagQuery || '',
+                width: 180,
+                enableKeyEvents: true,
+                listeners: {
+                    keyup: function(field) {
+                        var v = field.getValue();
+                        if (v === grid._tagQuery) { return; }
+                        grid._tagQuery = v;
+                        grid._tagPage = 0;
+                        grid._tagSearchFocus = true;
+                        grid._renderTagPage();
+                    },
+                    render: function(field) {
+                        // Не даём keyNav меню перехватывать набор текста.
+                        field.el.on('keydown', function(e) { e.stopPropagation(); });
+                    }
+                }
+            });
+            menu.add(searchField);
+            menu.add('-');
+            grid._tagSearchField = searchField;
+        } else {
+            grid._tagSearchField = null;
+        }
+
+        var q = (grid._tagQuery || '').toLowerCase();
+        var filtered = q
+            ? all.filter(function(t) { return t.toLowerCase().indexOf(q) >= 0; })
+            : all;
+
+        var size = grid._tagPageSize;
+        var pages = Math.max(1, Math.ceil(filtered.length / size));
+        if (grid._tagPage < 0) { grid._tagPage = 0; }
+        if (grid._tagPage > pages - 1) { grid._tagPage = pages - 1; }
+        var start = grid._tagPage * size;
+        var slice = filtered.slice(start, start + size);
+
+        if (!slice.length) {
+            menu.add({ text: _('mxlogger_tags_empty'), disabled: true });
+        }
+
+        Ext.each(slice, function(tag) {
+            menu.add(new Ext.menu.CheckItem({
+                text: tag,
+                checked: !!grid._checkedTags[tag],
+                hideOnClick: false,
+                checkHandler: function(item, checked) {
+                    if (checked) { grid._checkedTags[item.text] = true; }
+                    else { delete grid._checkedTags[item.text]; }
+                    grid._onTagCheck();
+                }
+            }));
+        });
+
+        // Навигация по страницам — стрелки и счётчик в одну строку.
+        if (pages > 1) {
+            var prevDis = grid._tagPage <= 0;
+            var nextDis = grid._tagPage >= pages - 1;
+            var pagerHtml =
+                '<span class="mxl-pg-btn mxl-pg-prev' + (prevDis ? ' mxl-pg-dis' : '') + '">‹</span>' +
+                '<span class="mxl-pg-info">' + (grid._tagPage + 1) + ' / ' + pages + '</span>' +
+                '<span class="mxl-pg-btn mxl-pg-next' + (nextDis ? ' mxl-pg-dis' : '') + '">›</span>';
+            menu.add('-');
+            menu.add({
+                text: pagerHtml,
+                cls: 'mxlogger-tag-pager',
+                hideOnClick: false,
+                listeners: {
+                    click: function(item, e) {
+                        if (!prevDis && e.getTarget('.mxl-pg-prev')) {
+                            grid._tagPage--; grid._renderTagPage();
+                        } else if (!nextDis && e.getTarget('.mxl-pg-next')) {
+                            grid._tagPage++; grid._renderTagPage();
+                        }
+                    }
+                }
             });
         }
+
+        menu.add('-');
+        menu.add({
+            text: _('mxlogger_btn_reset'),
+            handler: function() { grid._clearTags(); }
+        });
+
+        // Пересчёт раскладки, если меню сейчас открыто (высота меняется при
+        // смене страницы или фильтрации).
+        if (menu.rendered && menu.isVisible()) {
+            menu.doLayout();
+            if (searchField && searchField.rendered && menu.el) {
+                searchField.setWidth(menu.el.getWidth() - 8);
+            }
+            if (grid._tagSearchFocus && searchField) {
+                // После фильтрации возвращаем фокус в поле поиска (не перепоказываем
+                // меню, иначе keyNav украдёт фокус).
+                grid._tagSearchFocus = false;
+                searchField.focus();
+                var dom = searchField.el && searchField.el.dom;
+                if (dom) { dom.selectionStart = dom.selectionEnd = (dom.value || '').length; }
+            } else if (menu.el && grid._tagBtn.el) {
+                menu.show(grid._tagBtn.el);
+            }
+        }
+    },
+
+    _collectTags: function() {
+        var grid = this;
+        var tags = [];
+        // Сохраняем порядок из общего списка тэгов.
+        Ext.each(grid._allTags || [], function(tag) {
+            if (grid._checkedTags[tag]) { tags.push(tag); }
+        });
         return tags;
     },
 
@@ -230,11 +357,12 @@ Ext.extend(MxLogger.grid.Log, MODx.grid.Grid, {
     },
 
     _uncheckTags: function() {
-        if (this._tagBtn && this._tagBtn.menu) {
-            this._tagBtn.menu.items.each(function(it) {
-                if (it.checked && it.setChecked) { it.setChecked(false, true); }
-            });
+        this._checkedTags = {};
+        this._tagQuery = '';
+        this._tagPage = 0;
+        if (this._tagBtn) {
             this._tagBtn.setText(_('mxlogger_filter_tag'));
+            this._renderTagPage();
         }
     },
 
@@ -268,11 +396,13 @@ Ext.extend(MxLogger.grid.Log, MODx.grid.Grid, {
     },
 
     _setSingleTag: function(tag) {
-        if (this._tagBtn && this._tagBtn.menu) {
-            this._tagBtn.menu.items.each(function(it) {
-                if (it.setChecked) { it.setChecked(it.text === tag, true); }
-            });
-        }
+        this._checkedTags = {};
+        this._checkedTags[tag] = true;
+        this._tagQuery = '';
+        // Перепрыгиваем на страницу, где находится выбранный тэг.
+        var idx = (this._allTags || []).indexOf(tag);
+        if (idx >= 0) { this._tagPage = Math.floor(idx / this._tagPageSize); }
+        this._renderTagPage();
         this._onTagCheck();
     },
 

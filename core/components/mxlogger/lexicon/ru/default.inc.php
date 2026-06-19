@@ -35,6 +35,9 @@ $_lang['mxlogger_click_filter'] = 'Кликните, чтобы отфильтр
 /* Фильтры */
 $_lang['mxlogger_filter_tag'] = 'Тэги';
 $_lang['mxlogger_tags_empty'] = 'Тэгов пока нет';
+$_lang['mxlogger_tag_search'] = 'Поиск по тэгам';
+$_lang['mxlogger_tag_prev'] = 'Предыдущая страница';
+$_lang['mxlogger_tag_next'] = 'Следующая страница';
 $_lang['mxlogger_filter_level'] = 'Уровень…';
 $_lang['mxlogger_filter_process'] = 'Process UID…';
 $_lang['mxlogger_filter_ident'] = 'Пользователь / сессия / IP…';
