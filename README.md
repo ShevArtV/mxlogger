@@ -32,21 +32,50 @@ modxbuilder/mxlogger/      сборка пакета (см. modxbuilder/README.m
 
 ## Использование
 
-Сервис автозагружается (extension_packages) и доступен как `$modx->mxlogger` — `getService()` не нужен.
+Самый короткий способ — фасад **`$modx->mxl`** (с версии 1.2.0). Доступен сразу
+из любого сниппета/плагина/чанка, `getService()` не нужен. Тот же `$modx->mxl`
+работает и в [версии под MODX 3](https://github.com/ShevArtV/mxlogger3) — **API
+вызовов одинаков в обеих версиях**, отличается лишь способ получить сервис, если
+фасад недоступен (см. ниже).
 
 ```php
-$mxl = $modx->mxlogger;
+$modx->mxl->debug('purchase', 'Открыта корзина');
+$modx->mxl->info('purchase', 'Корзина создана', ['cart_id' => $id]);
+$modx->mxl->warning('purchase', 'Низкий остаток', ['left' => 2]);
+$modx->mxl->error('purchase', 'Платёж отклонён', ['code' => 'declined']);
 
-$mxl->info('purchase', 'Корзина создана', ['cart_id' => $id]);
-$mxl->info(['cart', 'purchase'], 'Товар добавлен', ['product' => $pid]);
+// Несколько тэгов на одну запись:
+$modx->mxl->info(['cart', 'purchase'], 'Товар добавлен', ['product' => $pid]);
 
-$p = $mxl->process(['cart', 'purchase']); // авто process_uid
+// Процесс — одна воронка с общим process_uid:
+$p = $modx->mxl->process(['cart', 'purchase']); // авто process_uid
 $p->info('Старт оплаты', ['order' => 42]);
 $p->error('Платёж отклонён', ['code' => 'declined']);
+$uid = $p->getUid();                            // можно сохранить и продолжить позже
 ```
+
+Сигнатура: `log($tags, $level, $message, array $context = [], array $options = [])`
++ шорткаты `debug/info/warning/error`. Уровни: `debug` / `info` / `warning` / `error`.
+
+Из чанка или Fenom:
+
+```
+[[!mxLogger? &tags=`cart,purchase` &level=`info` &message=`Товар добавлен`]]
+```
+
+**Если фасад недоступен** (версия ниже 1.2.0 или очень ранний этап загрузки) —
+сервис также доступен как `$modx->mxlogger` (extension_packages) или через
+`$modx->getService('mxlogger', 'mxLogger', MODX_CORE_PATH . 'components/mxlogger/model/mxlogger/')`.
 
 Подробности API, режимы захвата трассировки и фильтры записи — в
 [`core/components/mxlogger/docs/readme.txt`](core/components/mxlogger/docs/readme.txt).
+
+## Менеджер
+
+Логи — в «Компоненты → mxLogger»: грид с фильтрами (тэги, уровень, процесс,
+пользователь/сессия/IP, период, поиск по тексту), окно детали и очистка. Кнопка
+**Экспорт** в тулбаре выгружает записи с учётом текущих фильтров в Markdown
+(`.md`) или текст (`.txt`).
 
 ## Сборка пакета
 
@@ -55,4 +84,5 @@ $p->error('Платёж отклонён', ['code' => 'declined']);
 (запускать на живом MODX). Таблица создаётся PHP-резолвером при install/upgrade;
 при uninstall таблица **не** удаляется (чтобы не потерять логи).
 
-Версия: 1.0.0-pl.
+Актуальная версия и история изменений — в
+[`core/components/mxlogger/docs/changelog.txt`](core/components/mxlogger/docs/changelog.txt).
