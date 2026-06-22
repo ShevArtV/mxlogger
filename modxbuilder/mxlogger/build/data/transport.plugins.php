@@ -1,6 +1,7 @@
 <?php
 /**
  * Плагины mxLogger (статичные, код из файлов):
+ *   - mxLoggerFacade    — фасад $modx->mxl на OnMODXInit;
  *   - mxLoggerMiniShop2 — логирование корзины/заказа miniShop2;
  *   - mxLoggerRotate    — ротация старых логов на OnMODXInit.
  *
@@ -10,6 +11,14 @@
  */
 
 $specs = array(
+    array(
+        'name'        => 'mxLoggerFacade',
+        'description' => 'Короткий доступ к логгеру: $modx->mxl->info(...). Вешает сервис на $modx->mxl при OnMODXInit.',
+        'file'        => 'plugin.mxloggerfacade.php',
+        'static_file' => 'mxlogger/elements/plugins/plugin.mxloggerfacade.php',
+        'events'      => array('OnMODXInit'),
+        'priority'    => -10,
+    ),
     array(
         'name'        => 'mxLoggerMiniShop2',
         'description' => 'Логирование действий с корзиной (тэг cart) и заказом (тэг order); сквозной тэг purchase.',
@@ -57,7 +66,7 @@ foreach ($specs as $spec) {
         $pe = $this->modx->newObject('modPluginEvent');
         $pe->fromArray(array(
             'event'       => $event,
-            'priority'    => 0,
+            'priority'    => isset($spec['priority']) ? $spec['priority'] : 0,
             'propertyset' => 0,
         ), '', true, true);
         $pluginEvents[] = $pe;

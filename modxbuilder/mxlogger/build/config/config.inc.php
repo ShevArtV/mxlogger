@@ -24,7 +24,7 @@ $buildConfig = array(
     "real_package_name" => "mxLogger",
     //name for folder
     "package_name" => "mxlogger",
-    "package_version" => "1.1.0",
+    "package_version" => "1.2.0",
     "package_release" => "pl",
     "package_table_prefix" => "mxlogger_",
     "package_class_prefix" => "mxlogger",
