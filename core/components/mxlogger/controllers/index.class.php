@@ -59,6 +59,7 @@ class mxLoggerIndexManagerController extends modExtraManagerController
         MxLogger.config = ' . $this->modx->toJSON(array(
             'connector_url' => $connectorUrl,
             'assets_url'    => $assetsUrl,
+            'export_url'    => $assetsUrl . 'export.php',
         )) . ';
         Ext.onReady(function() {
             MODx.load({ xtype: "mxlogger-page-home" });

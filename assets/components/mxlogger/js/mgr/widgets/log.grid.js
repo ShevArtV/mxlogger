@@ -74,57 +74,82 @@ MxLogger.grid.Log = function(config) {
 Ext.extend(MxLogger.grid.Log, MODx.grid.Grid, {
 
     getTopBar: function(config) {
-        return [
-            {
-                xtype: 'button', itemId: 'filter_tag', text: _('mxlogger_filter_tag'),
-                menu: new Ext.menu.Menu({ items: [{ text: '…', disabled: true }] }),
-                listeners: { render: { fn: this._initTagMenu, scope: this } }
-            },
-            {
-                xtype: 'combo', itemId: 'filter_level', mode: 'local',
-                emptyText: _('mxlogger_filter_level'), width: 110, editable: false,
-                triggerAction: 'all', valueField: 'level', displayField: 'level',
-                store: new Ext.data.ArrayStore({
-                    fields: ['level'],
-                    data: [[''], ['debug'], ['info'], ['warning'], ['error']]
-                }),
-                listeners: { select: { fn: this.filterChange, scope: this } }
-            },
-            {
-                xtype: 'textfield', itemId: 'filter_process', emptyText: _('mxlogger_filter_process'), width: 130,
-                listeners: { change: { fn: this.filterChange, scope: this }, render: this._bindEnter, scope: this }
-            },
-            {
-                xtype: 'textfield', itemId: 'filter_ident', emptyText: _('mxlogger_filter_ident'), width: 210,
-                listeners: { change: { fn: this.filterChange, scope: this }, render: this._bindEnter, scope: this }
-            },
-            '-',
-            {
-                xtype: 'xdatetime', itemId: 'filter_date_from',
-                dateFormat: 'Y-m-d', timeFormat: 'H:i', width: 280, timeWidth: 100,
-                emptyText: _('mxlogger_filter_date_from'),
-                listeners: { change: { fn: this.filterChange, scope: this } }
-            },
-            {
-                xtype: 'xdatetime', itemId: 'filter_date_to',
-                dateFormat: 'Y-m-d', timeFormat: 'H:i', width: 280, timeWidth: 100,
-                emptyText: _('mxlogger_filter_date_to'),
-                listeners: { change: { fn: this.filterChange, scope: this } }
-            },
-            '->',
-            {
-                xtype: 'textfield', itemId: 'filter_query', emptyText: _('mxlogger_search'), width: 180,
-                listeners: { change: { fn: this.filterChange, scope: this }, render: this._bindEnter, scope: this }
-            },
-            {
-                xtype: 'button', text: _('mxlogger_btn_reset'), handler: this.resetFilters, scope: this
-            },
-            '-',
-            {
-                xtype: 'button', text: _('mxlogger_btn_clear'), cls: 'red',
-                handler: this.clearLog, scope: this
-            }
-        ];
+        // Тулбар в две строки: сверху — фильтры выборки, снизу — период и
+        // кнопки действий. Внешний контейнер, внутри два toolbar (Ext3 сам
+        // тулбар на строки не переносит).
+        return {
+            xtype: 'container',
+            cls: 'mxlogger-toolbars',
+            items: [
+                {
+                    xtype: 'toolbar',
+                    items: [
+                        {
+                            xtype: 'button', itemId: 'filter_tag', text: _('mxlogger_filter_tag'),
+                            menu: new Ext.menu.Menu({ items: [{ text: '…', disabled: true }] }),
+                            listeners: { render: { fn: this._initTagMenu, scope: this } }
+                        },
+                        {
+                            xtype: 'combo', itemId: 'filter_level', mode: 'local',
+                            emptyText: _('mxlogger_filter_level'), width: 110, editable: false,
+                            triggerAction: 'all', valueField: 'level', displayField: 'level',
+                            store: new Ext.data.ArrayStore({
+                                fields: ['level'],
+                                data: [[''], ['debug'], ['info'], ['warning'], ['error']]
+                            }),
+                            listeners: { select: { fn: this.filterChange, scope: this } }
+                        },
+                        {
+                            xtype: 'textfield', itemId: 'filter_process', emptyText: _('mxlogger_filter_process'), width: 130,
+                            listeners: { change: { fn: this.filterChange, scope: this }, render: this._bindEnter, scope: this }
+                        },
+                        {
+                            xtype: 'textfield', itemId: 'filter_ident', emptyText: _('mxlogger_filter_ident'), width: 210,
+                            listeners: { change: { fn: this.filterChange, scope: this }, render: this._bindEnter, scope: this }
+                        },
+                        {
+                            xtype: 'textfield', itemId: 'filter_query', emptyText: _('mxlogger_search'), width: 180,
+                            listeners: { change: { fn: this.filterChange, scope: this }, render: this._bindEnter, scope: this }
+                        }
+                    ]
+                },
+                {
+                    xtype: 'toolbar',
+                    items: [
+                        {
+                            xtype: 'xdatetime', itemId: 'filter_date_from',
+                            dateFormat: 'Y-m-d', timeFormat: 'H:i', width: 280, timeWidth: 100,
+                            emptyText: _('mxlogger_filter_date_from'),
+                            listeners: { change: { fn: this.filterChange, scope: this } }
+                        },
+                        {
+                            xtype: 'xdatetime', itemId: 'filter_date_to',
+                            dateFormat: 'Y-m-d', timeFormat: 'H:i', width: 280, timeWidth: 100,
+                            emptyText: _('mxlogger_filter_date_to'),
+                            listeners: { change: { fn: this.filterChange, scope: this } }
+                        },
+                        {
+                            xtype: 'button', text: _('mxlogger_btn_reset'), handler: this.resetFilters, scope: this
+                        },
+                        '-',
+                        {
+                            xtype: 'button', text: _('mxlogger_btn_export'),
+                            menu: [
+                                { text: _('mxlogger_export_md'), iconCls: 'icon icon-file-text-o',
+                                  handler: function() { this.exportLog('md'); }, scope: this },
+                                { text: _('mxlogger_export_txt'), iconCls: 'icon icon-file-o',
+                                  handler: function() { this.exportLog('txt'); }, scope: this }
+                            ]
+                        },
+                        '-',
+                        {
+                            xtype: 'button', text: _('mxlogger_btn_clear'), cls: 'red',
+                            handler: this.clearLog, scope: this
+                        }
+                    ]
+                }
+            ]
+        };
     },
 
     _bindEnter: function(f) {
@@ -134,15 +159,20 @@ Ext.extend(MxLogger.grid.Log, MODx.grid.Grid, {
     },
 
     _getTopBarFields: function() {
+        // Поля разнесены по двум вложенным toolbar — ищем рекурсивно по itemId.
         var tb = this.getTopToolbar();
+        var get = function(id) {
+            var r = tb.find('itemId', id);
+            return (r && r.length) ? r[0] : null;
+        };
         this._f = {
-            tag: tb.getComponent('filter_tag'),
-            level: tb.getComponent('filter_level'),
-            process: tb.getComponent('filter_process'),
-            ident: tb.getComponent('filter_ident'),
-            date_from: tb.getComponent('filter_date_from'),
-            date_to: tb.getComponent('filter_date_to'),
-            query: tb.getComponent('filter_query')
+            tag: get('filter_tag'),
+            level: get('filter_level'),
+            process: get('filter_process'),
+            ident: get('filter_ident'),
+            date_from: get('filter_date_from'),
+            date_to: get('filter_date_to'),
+            query: get('filter_query')
         };
     },
 
@@ -424,6 +454,20 @@ Ext.extend(MxLogger.grid.Log, MODx.grid.Grid, {
             if (e !== 'yes') { return; }
             MxLogger.request('mgr/log/clear', params, function() { this.refresh(); }, this);
         }, this);
+    },
+
+    exportLog: function(format) {
+        var bp = this.getStore().baseParams || {};
+        // Те же фильтры, что и в гриде (getlist) — выгрузка отдаст ровно то,
+        // что сейчас отфильтровано. Файл скачивается стрим-эндпоинтом export.php
+        // (не коннектором: ответ — файл-attachment, а не JSON).
+        var params = {
+            format: format,
+            tags: bp.tags || '', tags_match: bp.tags_match || '', level: bp.level || '',
+            process_uid: bp.process_uid || '', ident: bp.ident || '', query: bp.query || '',
+            date_from: bp.date_from || '', date_to: bp.date_to || ''
+        };
+        window.location.href = MxLogger.config.export_url + '?' + Ext.urlEncode(params);
     },
 
     onCellClick: function(grid, rowIndex, columnIndex, e) {
