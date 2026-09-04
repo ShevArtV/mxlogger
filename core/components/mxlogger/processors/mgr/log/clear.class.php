@@ -15,6 +15,15 @@ require_once dirname(__FILE__) . '/filters.php';
 class mxLoggerLogClearProcessor extends modProcessor
 {
     public $languageTopics = array('mxlogger:default');
+    /** Очистка журнала — право управления, а не просмотра. */
+    public $permission = 'mxlogger_manage';
+
+    // Базовый modProcessor::checkPermissions() — return true; свойство $permission
+    // само по себе ничего не проверяет, в отличие от modObjectProcessor.
+    public function checkPermissions()
+    {
+        return $this->modx->hasPermission($this->permission);
+    }
 
     public function process()
     {

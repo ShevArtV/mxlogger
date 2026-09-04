@@ -9,6 +9,15 @@
 class mxLoggerLogGetTagsProcessor extends modProcessor
 {
     public $languageTopics = array('mxlogger:default');
+    /** Коннектор доступен в обход контроллера CMP — проверка прав нужна в самом процессоре. */
+    public $permission = 'mxlogger_view';
+
+    // Базовый modProcessor::checkPermissions() — return true; свойство $permission
+    // само по себе ничего не проверяет, в отличие от modObjectProcessor.
+    public function checkPermissions()
+    {
+        return $this->modx->hasPermission($this->permission);
+    }
 
     public function process()
     {

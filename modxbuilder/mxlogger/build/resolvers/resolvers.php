@@ -25,5 +25,8 @@ return array(
         array(
             'source' => $this->config['resolvers'] . 'resolver.events.php',
         ),
+        array(
+            'source' => $this->config['resolvers'] . 'resolver.acl.php',
+        ),
     ),
 );

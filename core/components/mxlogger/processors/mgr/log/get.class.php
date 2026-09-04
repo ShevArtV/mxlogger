@@ -10,6 +10,8 @@ class mxLoggerLogGetProcessor extends modObjectGetProcessor
     public $classKey = 'mxLoggerLog';
     public $languageTopics = array('mxlogger:default');
     public $objectType = 'mxlogger.log';
+    /** Коннектор доступен в обход контроллера CMP — проверка прав нужна в самом процессоре. */
+    public $permission = 'mxlogger_view';
 
     public function cleanup()
     {

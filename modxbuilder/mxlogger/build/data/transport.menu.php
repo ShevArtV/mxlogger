@@ -22,7 +22,7 @@ $menu->fromArray(array(
     'handler'     => '',
     'namespace'   => $namespace,
     'action'      => 'index',
-    'permissions' => '',
+    'permissions' => 'mxlogger_view',
 ), '', true, true);
 
 $menus[] = $menu;

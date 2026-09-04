@@ -28,7 +28,9 @@ class mxLoggerIndexManagerController extends modExtraManagerController
 
     public function checkPermissions()
     {
-        return true;
+        // Базовый modExtraManagerController::checkPermissions() возвращает true —
+        // без этого переопределения CMP открыт любому авторизованному в mgr.
+        return $this->modx->hasPermission('mxlogger_view');
     }
 
     public function getPageTitle()

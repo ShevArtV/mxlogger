@@ -1,5 +1,29 @@
 Changelog for mxLogger.
 
+mxLogger 1.3.0 (2026-09-04)
+===========================
+- CHANGE: ужесточение доступа. После обновления CMP mxLogger, все mgr-процессоры
+  и экспорт журнала закрываются для всех, кроме групп Administrator и Developers
+  (им политика mxloggerDefault назначается при установке автоматически). Прочим
+  группам, которым нужен доступ, политику mxloggerDefault надо назначить вручную:
+  Пользователи → Права доступа → группа → Контексты → mgr → mxloggerDefault.
+- Права пакета: mxlogger_view (CMP, грид, просмотр записи, список тэгов, экспорт)
+  и mxlogger_manage (удаление записи, очистка журнала). Объявлены в собственном
+  шаблоне политики mxloggerTemplate вместе с правом load; политика mxloggerDefault
+  включает все три.
+- Резолвер создаёт шаблон, права и политику и назначает её отдельной ACL-записью
+  modAccessContext (Administrator → mgr, authority 9999; то же для Developers,
+  если группа есть). Отдельной записью, а не дописыванием в политику Administrator:
+  та живёт на AdministratorTemplate и чужих прав не принимает, а несколько политик
+  на один контекст складываются.
+- Проверки прав: checkPermissions() в контроллере CMP, $permission во всех пяти
+  mgr-процессорах (getlist/get/gettags — mxlogger_view, clear/remove —
+  mxlogger_manage; у gettags и clear ещё и явный checkPermissions(), так как
+  базовый modProcessor его не делает), явная проверка в assets/.../export.php.
+- У пункта меню mxlogger проставлено permissions=mxlogger_view — в сборке и, на
+  апгрейде уже установленного сайта, резолвером (vehicle меню существующую запись
+  не перезаписывает).
+
 mxLogger 1.2.0 (2026-06-22)
 ===========================
 - Короткий фасад логгера: $modx->mxl->info(...) (а также debug/warning/error/

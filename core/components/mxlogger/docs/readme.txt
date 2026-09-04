@@ -126,6 +126,9 @@ $uid = $p->getUid();                       // можно сохранить и �
 
 Если повреждён и сам файл core/config/config.inc.php — параметры БД можно задать переменными окружения MXLOGGER_DSN, MXLOGGER_DB_USER, MXLOGGER_DB_PASS, MXLOGGER_TABLE_PREFIX.
 
+<strong>Права доступа</strong>
+С версии 1.3.0 доступ к CMP, процессорам и экспорту закрыт правами пакета: <em>mxlogger_view</em> (меню, грид, просмотр записи, список тэгов, экспорт) и <em>mxlogger_manage</em> (удаление записи, очистка журнала). Права объявлены в шаблоне политики <em>mxloggerTemplate</em>, политика пакета — <em>mxloggerDefault</em>; при установке она назначается группам Administrator и Developers на контекст mgr. Другим группам её назначают вручную: Пользователи → Права доступа → группа → Контексты → mgr → mxloggerDefault.
+
 <strong>Системные настройки</strong>
 <ul>
 <li>mxlogger.enabled — глобальный выключатель записи;</li>

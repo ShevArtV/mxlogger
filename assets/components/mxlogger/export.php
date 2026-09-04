@@ -34,6 +34,13 @@ if (!$modx->user || !$modx->user->isAuthenticated('mgr')) {
     exit('Unauthorized');
 }
 
+// Экспорт — отдельный эндпоинт, а не процессор: $permission здесь не работает,
+// право проверяем явно. Иначе журнал выгружает любой авторизованный менеджер.
+if (!$modx->hasPermission('mxlogger_view')) {
+    header('HTTP/1.1 403 Forbidden');
+    exit('Forbidden');
+}
+
 $corePath = $modx->getOption('mxlogger.core_path', null, $modx->getOption('core_path') . 'components/mxlogger/');
 require_once $corePath . 'processors/mgr/log/filters.php';
 require_once $corePath . 'processors/mgr/log/exporter.php';

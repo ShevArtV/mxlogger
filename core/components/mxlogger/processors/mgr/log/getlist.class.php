@@ -11,6 +11,8 @@ class mxLoggerLogGetListProcessor extends modObjectGetListProcessor
 {
     public $classKey = 'mxLoggerLog';
     public $languageTopics = array('mxlogger:default');
+    /** Коннектор доступен в обход контроллера CMP — проверка прав нужна в самом процессоре. */
+    public $permission = 'mxlogger_view';
     public $defaultSortField = 'id';
     public $defaultSortDirection = 'DESC';
 
