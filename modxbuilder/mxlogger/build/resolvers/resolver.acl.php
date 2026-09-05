@@ -6,8 +6,18 @@
  *   - шаблон политики mxloggerTemplate;
  *   - права load / mxlogger_view / mxlogger_manage в этом шаблоне;
  *   - политику mxloggerDefault со всеми правами пакета;
- *   - ACL-записи modAccessContext: Administrator → mgr → mxloggerDefault (authority 9999),
- *     то же для Developers, если такая группа на сайте есть.
+ *   - ACL-запись modAccessContext: Administrator → mgr → mxloggerDefault (authority 9999).
+ *
+ * ⚠️ ИНВАРИАНТ, не ломать: шаблон, права и политика создаются БЕЗУСЛОВНО и до блока
+ * назначения групп. Наличие/отсутствие какой-либо группы на выдачу политики не влияет —
+ * политика обязана появиться в БД на любом сайте, даже если назначать её оказалось некому.
+ *
+ * ⚠️ Пакет НЕ знает имён рабочих групп конкретного сайта. Единственная группа, к которой
+ * он привязывается, — системная Administrator (id 1): она есть в любой установке MODX.
+ * Раньше здесь была ещё и Developers; на sleepandglow её переименовали в Dev, назначение
+ * молча пропускалось, и права пакета не доставались никому. Добавлять сюда имена групп
+ * сайта нельзя — остальным группам политика выдаётся вручную через админку
+ * (Пользователи → Права доступа → группа → Контексты → mgr → mxloggerDefault).
  *
  * Почему отдельной ACL-записью, а не дописыванием прав в политику Administrator:
  * права mxlogger_* объявлены в собственном шаблоне пакета, а политика Administrator
@@ -100,11 +110,16 @@ switch ($options[xPDOTransport::PACKAGE_ACTION]) {
         }
 
         /* --- Назначение политики группам ---------------------------------- */
-        foreach (array('Administrator', 'Developers') as $groupName) {
+        // Политика выше уже создана и сохранена — этот блок только раздаёт её.
+        // Только системная Administrator (id 1); имён рабочих групп сайта здесь быть
+        // не должно, см. шапку файла.
+        foreach (array('Administrator') as $groupName) {
             /** @var modUserGroup $group */
             $group = $modx->getObject('modUserGroup', array('name' => $groupName));
             if (!$group) {
-                // Группы Developers на сайте может не быть — это не ошибка установки.
+                // Administrator — системная группа MODX, её отсутствие означает
+                // сломанную установку. Ставить не мешаем, но след в лог оставляем.
+                $modx->log(modX::LOG_LEVEL_WARN, '[mxLogger] Группа ' . $groupName . ' не найдена — политика mxloggerDefault создана, но не назначена');
                 continue;
             }
             $criteria = array(
