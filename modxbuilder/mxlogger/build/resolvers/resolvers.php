@@ -28,5 +28,8 @@ return array(
         array(
             'source' => $this->config['resolvers'] . 'resolver.acl.php',
         ),
+        array(
+            'source' => $this->config['resolvers'] . 'resolver.pluginevents.php',
+        ),
     ),
 );

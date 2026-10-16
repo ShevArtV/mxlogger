@@ -17,7 +17,6 @@ $specs = array(
         'file'        => 'plugin.mxloggerfacade.php',
         'static_file' => 'mxlogger/elements/plugins/plugin.mxloggerfacade.php',
         'events'      => array('OnMODXInit'),
-        'priority'    => -10,
     ),
     array(
         'name'        => 'mxLoggerMiniShop2',
@@ -39,6 +38,11 @@ $specs = array(
         'events'      => array('OnMODXInit'),
     ),
 );
+
+// Все привязки плагинов логгера — priority -10: логгер идёт первым в цепочке события.
+// modX::invokeEvent() сбрасывает returnedValues перед каждым плагином, и логгер в конце
+// цепочки затирал данные плагинов сайта (receiver/properties на msOnSubmitOrder).
+$priority = -10;
 
 $plugins = array();
 foreach ($specs as $spec) {
@@ -66,7 +70,7 @@ foreach ($specs as $spec) {
         $pe = $this->modx->newObject('modPluginEvent');
         $pe->fromArray(array(
             'event'       => $event,
-            'priority'    => isset($spec['priority']) ? $spec['priority'] : 0,
+            'priority'    => $priority,
             'propertyset' => 0,
         ), '', true, true);
         $pluginEvents[] = $pe;

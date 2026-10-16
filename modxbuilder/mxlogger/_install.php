@@ -194,11 +194,16 @@ foreach ($pluginSpecs as $spec) {
             $say('  пропуск (событие не зарегистрировано): ' . $event);
             continue;
         }
-        if (!$modx->getObject('modPluginEvent', array('pluginid' => $pluginId, 'event' => $event))) {
+        // priority -10: логгер первым в цепочке, иначе он затирает returnedValues плагинов сайта.
+        $pe = $modx->getObject('modPluginEvent', array('pluginid' => $pluginId, 'event' => $event));
+        if (!$pe) {
             $pe = $modx->newObject('modPluginEvent');
-            $pe->fromArray(array('pluginid' => $pluginId, 'event' => $event, 'priority' => 0, 'propertyset' => 0), '', true, true);
+            $pe->fromArray(array('pluginid' => $pluginId, 'event' => $event, 'priority' => -10, 'propertyset' => 0), '', true, true);
             $pe->save();
             $linked++;
+        } elseif ((int)$pe->get('priority') !== -10) {
+            $pe->set('priority', -10);
+            $pe->save();
         }
     }
     $say('Плагин ' . $spec['name'] . ' (id=' . $pluginId . '), новых событий: ' . $linked . '.');
